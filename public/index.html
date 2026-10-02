@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libra — My personal gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/libra.svg" type="image/svg+xml">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { display: ['Montserrat','system-ui','sans-serif'], sans: ['Montserrat','system-ui','sans-serif'] },
+  colors: { bg:'var(--bg)', surf:'var(--surf)', surf2:'var(--surf2)', line:'var(--line)', ink:'var(--ink)', mute:'var(--mute)', acc:'var(--acc)', accink:'var(--accink)' }
+}}}
+</script>
+<style>
+:root[data-theme="dark"]{--bg:#05070f;--surf:rgba(13,17,32,.68);--surf2:rgba(255,255,255,.07);--line:rgba(255,255,255,.12);--ink:#eef0f7;--mute:#9aa2bd;--acc:#e8c98f;--accink:#17120a}
+:root[data-theme="light"]{--bg:#eef0f6;--surf:rgba(255,255,255,.8);--surf2:rgba(20,24,43,.06);--line:rgba(20,24,43,.12);--ink:#161a2b;--mute:#5d6483;--acc:#8a5a14;--accink:#ffffff}
+html,body{height:100%}
+html{background:var(--bg)}
+body{color:var(--ink);font-family:Montserrat,system-ui,sans-serif;font-weight:500;position:relative}
+.font-bold,.font-extrabold,.font-semibold,.font-display{font-weight:600!important}
+/* Cinematic backdrop: change the url() below to use your own photo */
+body::before{content:"";position:fixed;inset:-3%;z-index:-2;background:url(assets/libra-cinematic.svg) center/cover no-repeat;animation:drift 70s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,transparent 35%,rgba(0,0,0,.6) 100%),url(assets/grain.svg)}
+:root[data-theme="light"] body::before{opacity:.1}
+:root[data-theme="light"] body::after{background:none}
+@keyframes drift{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.07) translate3d(-1.2%,.8%,0)}}
+#side,main>header,#drop,#urlForm{-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+select option{background:#141a2c;color:#eef0f7}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.t-image{--c:#7fd6c2}.t-video{--c:#f2a57b}.t-audio{--c:#c9a2ff}.t-doc{--c:#f0d27a}
+.chip{background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.card{background:var(--surf);border:1px solid var(--line);transition:border-color .15s}
+.card:hover{border-color:var(--acc)}
+.card.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.drop-on{border-color:var(--acc)!important;background:color-mix(in srgb,var(--acc) 10%,transparent)!important}
+.scroll::-webkit-scrollbar{width:10px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.rise{animation:rise .35s ease both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<!-- LOCK SCREEN -->
+<section id="lock" class="fixed inset-0 z-50 grid place-items-center p-6">
+  <div class="rise w-full max-w-md rounded-3xl border border-line bg-surf p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+    <div class="mb-8 flex items-center gap-3">
+      <div class="grid h-11 w-11 place-items-center rounded-xl bg-acc text-accink"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M4 16h4.5a5.5 5.5 0 1 1 7 0H20"/></svg></div>
+      <span class="font-display text-2xl font-semibold tracking-wide">Libra</span>
+    </div>
+    <h1 class="font-display text-3xl font-semibold leading-tight sm:text-4xl">Everything of yours, held in balance.</h1>
+    <p class="mt-3 text-mute">Sign in to open your gallery. Only you can see what's inside.</p>
+    <form id="loginForm" class="mt-8 space-y-3">
+      <label class="block text-sm font-semibold" for="pw">Passcode</label>
+      <input id="pw" type="password" autocomplete="current-password" class="w-full rounded-xl border border-line bg-surf px-4 py-3 outline-none focus:border-acc" placeholder="Enter your passcode">
+      <p id="loginErr" class="hidden text-sm text-red-400">That passcode is wrong. Try again.</p>
+      <button class="w-full rounded-xl bg-acc py-3 font-bold text-accink hover:opacity-90">Open Libra</button>
+    </form>
+  </div>
+</section>
+
+<!-- APP -->
+<div id="app" class="hidden h-full">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside id="side" class="fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col border-r border-line bg-surf p-4 transition-transform lg:static lg:translate-x-0">
+      <div class="mb-6 flex items-center gap-3 px-2">
+        <div class="grid h-9 w-9 place-items-center rounded-lg bg-acc text-accink"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M4 16h4.5a5.5 5.5 0 1 1 7 0H20"/></svg></div>
+        <span class="font-display text-xl font-semibold tracking-wide">Libra</span>
+      </div>
+      <button id="uploadBtn" class="mb-5 flex items-center justify-center gap-2 rounded-xl bg-acc py-3 font-bold text-accink hover:opacity-90">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"/></svg> Upload files
+      </button>
+      <nav id="nav" class="space-y-1 text-sm font-semibold"></nav>
+      <div class="mt-auto rounded-xl bg-surf2 p-4">
+        <div class="flex justify-between text-sm"><span class="font-semibold">Storage</span><span id="usedTxt" class="text-mute"></span></div>
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-line"><div id="usedBar" class="h-full rounded-full bg-acc transition-all" style="width:0%"></div></div>
+        <p class="mt-2 text-xs text-mute">of 10 GB used</p>
+      </div>
+      <button id="lockBtn" class="mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-mute hover:bg-surf2 hover:text-ink">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg> Lock Libra
+      </button>
+    </aside>
+    <div id="scrim" class="fixed inset-0 z-20 hidden bg-black/50 lg:hidden"></div>
+
+    <!-- Main -->
+    <main class="flex min-w-0 flex-1 flex-col">
+      <header class="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-6">
+        <button id="menuBtn" class="rounded-lg p-2 hover:bg-surf2 lg:hidden" aria-label="Open menu"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="relative min-w-[180px] flex-1 sm:max-w-md">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-mute" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+          <input id="search" type="search" placeholder="Search your files" class="w-full rounded-xl border border-line bg-surf py-2.5 pl-9 pr-3 text-sm outline-none focus:border-acc">
+        </div>
+        <select id="sort" class="rounded-xl border border-line bg-surf px-3 py-2.5 text-sm outline-none focus:border-acc" aria-label="Sort files">
+          <option value="new">Newest first</option><option value="old">Oldest first</option><option value="name">Name A–Z</option><option value="size">Largest first</option>
+        </select>
+        <div class="flex rounded-xl border border-line bg-surf p-1">
+          <button id="vGrid" class="rounded-lg p-1.5" aria-label="Grid view"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+          <button id="vList" class="rounded-lg p-1.5" aria-label="List view"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+        </div>
+        <button id="themeBtn" class="rounded-xl border border-line bg-surf p-2.5 hover:border-acc" aria-label="Toggle theme"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></button>
+      </header>
+
+      <div id="scroller" class="scroll flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+        <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="title" class="font-display text-3xl font-extrabold">All files</h2>
+            <p id="count" class="text-sm text-mute"></p>
+          </div>
+          <div id="bulk" class="hidden items-center gap-2 text-sm">
+            <span id="bulkTxt" class="font-semibold"></span>
+            <button id="bulkDl" class="rounded-lg border border-line px-3 py-1.5 font-semibold hover:border-acc">Download</button>
+            <button id="bulkDel" class="rounded-lg border border-line px-3 py-1.5 font-semibold text-red-400 hover:border-red-400">Delete</button>
+            <button id="bulkX" class="px-2 py-1.5 text-mute hover:text-ink">Clear</button>
+          </div>
+        </div>
+
+        <!-- Drop zone + URL import -->
+        <div class="mb-6 grid gap-3 lg:grid-cols-[1fr_340px]">
+          <div id="drop" class="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-line bg-surf px-5 py-5 transition-colors" tabindex="0" role="button" aria-label="Drop files here or click to browse">
+            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-surf2 text-acc"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"/></svg></div>
+            <div><p class="font-bold">Drop files here, or click to browse</p><p class="text-sm text-mute">Photos, videos, audio and documents. Up to 500 MB each.</p></div>
+          </div>
+          <form id="urlForm" class="rounded-2xl border border-line bg-surf p-4">
+            <label for="urlIn" class="text-sm font-bold">Save from a link</label>
+            <div class="mt-2 flex gap-2">
+              <input id="urlIn" type="url" required placeholder="https://…" class="min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-acc">
+              <button class="rounded-lg bg-acc px-4 text-sm font-bold text-accink hover:opacity-90">Save</button>
+            </div>
+          </form>
+        </div>
+        <input id="file" type="file" multiple class="hidden">
+
+        <div id="uploads" class="mb-5 space-y-2"></div>
+        <div id="grid"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- PREVIEW -->
+<div id="viewer" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm">
+  <div class="flex h-full flex-col">
+    <div class="flex items-center gap-3 px-4 py-3 text-white">
+      <div class="min-w-0 flex-1"><p id="vName" class="truncate font-bold"></p><p id="vMeta" class="text-xs text-white/60"></p></div>
+      <button id="vFav" class="rounded-lg p-2 hover:bg-white/10" aria-label="Favourite"></button>
+      <button id="vRen" class="rounded-lg p-2 hover:bg-white/10" aria-label="Rename"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+      <a id="vDl" class="rounded-lg p-2 hover:bg-white/10" aria-label="Download"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg></a>
+      <button id="vDel" class="rounded-lg p-2 text-red-400 hover:bg-white/10" aria-label="Delete"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <button id="vX" class="rounded-lg p-2 hover:bg-white/10" aria-label="Close"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="relative flex min-h-0 flex-1 items-center justify-center px-14">
+      <button id="vPrev" class="absolute left-3 rounded-full bg-white/10 p-3 text-white hover:bg-white/20" aria-label="Previous"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div id="vBody" class="flex max-h-full max-w-full items-center justify-center"></div>
+      <button id="vNext" class="absolute right-3 rounded-full bg-white/10 p-3 text-white hover:bg-white/20" aria-label="Next"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-[60] -translate-x-1/2 translate-y-4 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-bg opacity-0 shadow-xl transition-all"></div>
+
+<script>
+/* ============ API LAYER ============
+   Talks to the Node backend. Same origin, so the httpOnly login cookie is sent automatically. */
+const JSON_H = {'Content-Type':'application/json'};
+const API = {
+  async _j(url, opts={}){
+    const r = await fetch(url, {credentials:'same-origin', headers:JSON_H, ...opts});
+    if(r.status===401){ showLock(); throw new Error('Please sign in'); }
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  },
+  async me(){ return (await fetch('/api/auth/me',{credentials:'same-origin'})).ok; },
+  async login(pw){ return (await fetch('/api/auth/login',{method:'POST',headers:JSON_H,body:JSON.stringify({password:pw})})).ok; },
+  async logout(){ await fetch('/api/auth/logout',{method:'POST'}); },
+  list(){ return this._j('/api/files'); },
+  upload(file, onProgress){
+    return new Promise((resolve,reject)=>{
+      const fd = new FormData(); fd.append('files', file);
+      const x = new XMLHttpRequest(); x.open('POST','/api/files');
+      x.upload.onprogress = e => e.lengthComputable && onProgress(Math.round(e.loaded/e.total*100));
+      x.onload = () => { if(x.status===401) showLock(); x.status<300 ? resolve(JSON.parse(x.responseText)[0]) : reject(new Error(x.responseText)); };
+      x.onerror = () => reject(new Error('Network error'));
+      x.send(fd);
+    });
+  },
+  importUrl(url){ return this._j('/api/files/import',{method:'POST',body:JSON.stringify({url})}); },
+  rename(id,name){ return this._j('/api/files/'+id,{method:'PATCH',body:JSON.stringify({name})}); },
+  favorite(id,fav){ return this._j('/api/files/'+id,{method:'PATCH',body:JSON.stringify({fav})}); },
+  remove(ids){ return this._j('/api/files',{method:'DELETE',body:JSON.stringify({ids})}); }
+};
+
+/* ============ HELPERS ============ */
+const $ = s => document.querySelector(s);
+const ICON = {
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
+  video:'<rect x="2" y="5" width="14" height="14" rx="2"/><path d="M22 7l-6 5 6 5z"/>',
+  audio:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+  all:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  fav:'<path d="M12 21s-8-5.3-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.7-8 11-8 11z"/>'
+};
+const svg = (k,s=20,fill='none') => `<svg width="${s}" height="${s}" fill="${fill}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${ICON[k]}</svg>`;
+const typeOf = f => { const m=f.mime, e=f.name.split('.').pop().toLowerCase();
+  if(m.startsWith('image')||['jpg','jpeg','png','gif','webp','svg','avif'].includes(e)) return 'image';
+  if(m.startsWith('video')||['mp4','mov','webm','mkv'].includes(e)) return 'video';
+  if(m.startsWith('audio')||['mp3','wav','m4a','ogg','flac'].includes(e)) return 'audio';
+  return 'doc'; };
+const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':b<1073741824?(b/1048576).toFixed(1)+' MB':(b/1073741824).toFixed(2)+' GB';
+const ago = t => new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+const esc = s => s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LABEL = {all:'All files',video:'Videos',image:'Photos',audio:'Audio',doc:'Documents',fav:'Favourites'};
+let state = { filter:'all', q:'', sort:'new', view:'grid', sel:new Set(), open:-1, files:[] };
+
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.remove('opacity-0','translate-y-4'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.add('opacity-0','translate-y-4'),2400); }
+
+/* ============ RENDER ============ */
+const RANK={video:0,image:1,audio:2,doc:3};
+function visible(){
+  let r = state.files.filter(f=>{
+    const t=typeOf(f); if(state.filter==='fav'?!f.fav:(state.filter!=='all'&&t!==state.filter)) return false;
+    return f.name.toLowerCase().includes(state.q.toLowerCase()); });
+  const s={new:(a,b)=>b.created-a.created,old:(a,b)=>a.created-b.created,name:(a,b)=>a.name.localeCompare(b.name),size:(a,b)=>b.size-a.size}[state.sort];
+  return r.sort((a,b)=>RANK[typeOf(a)]-RANK[typeOf(b)]||s(a,b));
+}
+function thumb(f,t){
+  if(t==='image') return `<img src="${f.url}" alt="" loading="lazy" class="h-full w-full object-cover">`;
+  if(t==='video') return `<video src="${f.url}#t=0.5" preload="metadata" muted class="h-full w-full object-cover"></video><span class="absolute inset-0 grid place-items-center"><span class="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white">${svg('video',18)}</span></span>`;
+  const ext=f.name.split('.').pop().slice(0,4).toUpperCase();
+  return `<div class="grid h-full w-full place-items-center bg-surf2"><div class="chip grid h-16 w-16 place-items-center rounded-2xl">${svg(t,30)}</div></div><span class="absolute bottom-2 left-2 rounded-md bg-black/50 px-1.5 py-0.5 text-[11px] font-bold text-white">${esc(ext)}</span>`;
+}
+function render(){
+  const list = visible(); const g=$('#grid');
+  $('#title').textContent = LABEL[state.filter];
+  $('#count').textContent = `${list.length} ${list.length===1?'item':'items'}`;
+  // sidebar
+  const counts={all:state.files.length,fav:state.files.filter(f=>f.fav).length};
+  ['image','video','audio','doc'].forEach(k=>counts[k]=state.files.filter(f=>typeOf(f)===k).length);
+  $('#nav').innerHTML = Object.keys(LABEL).map(k=>`<button data-f="${k}" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 ${state.filter===k?'bg-surf2 text-ink':'text-mute hover:bg-surf2 hover:text-ink'}">${svg(k,18)}<span class="flex-1 text-left">${LABEL[k]}</span><span class="text-xs">${counts[k]}</span></button>`).join('');
+  const used=state.files.reduce((a,f)=>a+f.size,0);
+  $('#usedTxt').textContent=fmt(used); $('#usedBar').style.width=Math.max(1,used/10737418240*100)+'%';
+  // view toggle
+  $('#vGrid').className='rounded-lg p-1.5 '+(state.view==='grid'?'bg-surf2 text-acc':'text-mute');
+  $('#vList').className='rounded-lg p-1.5 '+(state.view==='list'?'bg-surf2 text-acc':'text-mute');
+  // bulk bar
+  const n=state.sel.size; $('#bulk').classList.toggle('hidden',!n); $('#bulk').classList.toggle('flex',!!n); $('#bulkTxt').textContent=n+' selected';
+
+  if(!list.length){
+    g.innerHTML=`<div class="grid place-items-center rounded-2xl border border-line bg-surf px-6 py-16 text-center"><div class="chip t-image mb-4 grid h-14 w-14 place-items-center rounded-2xl">${svg('all',26)}</div><h3 class="font-display text-xl font-bold">${state.files.length?'Nothing matches':'Your gallery is empty'}</h3><p class="mt-1 max-w-xs text-sm text-mute">${state.files.length?'Try a different search or switch category.':'Drop in your first photo, video, song or document to get started.'}</p>${state.files.length?'':'<button onclick="$(\'#file\').click()" class="mt-5 rounded-xl bg-acc px-5 py-2.5 text-sm font-bold text-accink">Upload files</button>'}</div>`; return; }
+
+  const cardFn=f=>{const t=typeOf(f);return `<article class="card t-${t} group relative overflow-hidden rounded-2xl ${state.sel.has(f.id)?'sel':''}" data-id="${f.id}">
+      <button class="relative block aspect-square w-full overflow-hidden bg-surf2" data-open="${f.id}" aria-label="Open ${esc(f.name)}">${thumb(f,t)}</button>
+      <label class="absolute left-2 top-2 grid h-6 w-6 cursor-pointer place-items-center rounded-md bg-black/55 ${state.sel.has(f.id)?'':'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}"><input type="checkbox" data-sel="${f.id}" class="accent-[var(--acc)]" ${state.sel.has(f.id)?'checked':''} aria-label="Select"></label>
+      ${f.fav?`<span class="absolute right-2 top-2 text-rose-400">${svg('fav',18,'currentColor')}</span>`:''}
+      <div class="p-3"><p class="truncate text-sm font-semibold">${esc(f.name)}</p><p class="mt-0.5 text-xs text-mute">${fmt(f.size)} · ${ago(f.created)}</p></div></article>`};
+  const rowFn=f=>{const t=typeOf(f);return `<div class="t-${t} flex items-center gap-3 border-b border-line px-3 py-2.5 last:border-0 hover:bg-surf2 ${state.sel.has(f.id)?'bg-surf2':''}">
+      <input type="checkbox" data-sel="${f.id}" class="accent-[var(--acc)]" ${state.sel.has(f.id)?'checked':''} aria-label="Select">
+      <button data-open="${f.id}" class="flex min-w-0 flex-1 items-center gap-3 text-left"><span class="chip grid h-10 w-10 shrink-0 place-items-center rounded-xl">${svg(t,20)}</span><span class="truncate text-sm font-semibold">${esc(f.name)}</span></button>
+      ${f.fav?`<span class="text-rose-400">${svg('fav',16,'currentColor')}</span>`:''}
+      <span class="hidden w-24 text-right text-sm text-mute sm:block">${fmt(f.size)}</span><span class="hidden w-28 text-right text-sm text-mute md:block">${ago(f.created)}</span></div>`};
+  const grid=state.view==='grid', showHead=state.filter==='all'||state.filter==='fav';
+  const GRID='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6', LIST='overflow-hidden rounded-2xl border border-line bg-surf';
+  const NAMES={video:'Videos',image:'Photos',audio:'Audio',doc:'Documents'};
+  g.className='';
+  g.innerHTML=['video','image','audio','doc'].map(k=>{
+    const part=list.filter(f=>typeOf(f)===k); if(!part.length) return '';
+    const head=showHead?`<div class="mb-3 flex items-center gap-3"><span class="chip t-${k} grid h-8 w-8 place-items-center rounded-lg">${svg(k,16)}</span><h3 class="font-display text-lg">${NAMES[k]}</h3><span class="text-sm text-mute">${part.length}</span><span class="h-px flex-1 bg-line"></span></div>`:'';
+    return `<section class="mb-9">${head}<div class="${grid?GRID:LIST}">${part.map(grid?cardFn:rowFn).join('')}</div></section>`;
+  }).join('');
+}
+
+/* ============ UPLOAD ============ */
+async function handleFiles(files){
+  for(const file of files){
+    const row=document.createElement('div'); row.className='rounded-xl border border-line bg-surf px-4 py-3 text-sm';
+    row.innerHTML=`<div class="flex justify-between gap-3"><span class="truncate font-semibold">${esc(file.name)}</span><span class="pct text-mute">0%</span></div><div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div class="bar h-full bg-acc transition-all" style="width:0"></div></div>`;
+    $('#uploads').appendChild(row);
+    try{
+      await API.upload(file,p=>{row.querySelector('.pct').textContent=p+'%';row.querySelector('.bar').style.width=p+'%';});
+      state.files=await API.list(); render();
+    }catch(e){ toast('Could not upload '+file.name+'. Try again.'); }
+    setTimeout(()=>row.remove(),500);
+  }
+  toast(files.length>1?files.length+' files uploaded':'Uploaded');
+}
+
+/* ============ VIEWER ============ */
+function open(i){
+  const list=visible(); if(i<0||i>=list.length) return; state.open=i; const f=list[i],t=typeOf(f);
+  $('#viewer').classList.remove('hidden');
+  $('#vName').textContent=f.name; $('#vMeta').textContent=`${fmt(f.size)} · ${ago(f.created)}`;
+  $('#vDl').href=f.url+'?download=1'; $('#vDl').download=f.name;
+  $('#vFav').innerHTML=svg('fav',20,f.fav?'currentColor':'none'); $('#vFav').className='rounded-lg p-2 hover:bg-white/10 '+(f.fav?'text-rose-400':'text-white');
+  $('#vBody').innerHTML = t==='image'?`<img src="${f.url}" class="max-h-[78vh] max-w-full rounded-lg object-contain">`
+    : t==='video'?`<video src="${f.url}" controls autoplay class="max-h-[78vh] max-w-full rounded-lg"></video>`
+    : t==='audio'?`<div class="t-audio w-[min(420px,80vw)] rounded-2xl bg-white/10 p-8 text-center text-white"><div class="chip mx-auto mb-5 grid h-20 w-20 place-items-center rounded-3xl">${svg('audio',36)}</div><audio src="${f.url}" controls autoplay class="w-full"></audio></div>`
+    : f.mime==='application/pdf'?`<iframe src="${f.url}" class="h-[78vh] w-[min(900px,85vw)] rounded-lg bg-white"></iframe>`
+    : `<div class="t-doc w-[min(380px,80vw)] rounded-2xl bg-white/10 p-8 text-center text-white"><div class="chip mx-auto mb-4 grid h-20 w-20 place-items-center rounded-3xl">${svg('doc',36)}</div><p class="font-semibold">No preview for this file type</p><p class="mt-1 text-sm text-white/60">Download it to open on your device.</p></div>`;
+}
+function closeViewer(){ $('#viewer').classList.add('hidden'); $('#vBody').innerHTML=''; state.open=-1; }
+const cur=()=>visible()[state.open];
+
+/* ============ EVENTS ============ */
+async function enterApp(){ state.files=await API.list(); $('#lock').classList.add('hidden'); $('#app').classList.remove('hidden'); render(); }
+function showLock(){ $('#app').classList.add('hidden'); $('#lock').classList.remove('hidden'); $('#pw').value=''; closeViewer(); }
+$('#loginForm').onsubmit=async e=>{ e.preventDefault();
+  if(await API.login($('#pw').value)){ $('#loginErr').classList.add('hidden'); await enterApp(); }
+  else $('#loginErr').classList.remove('hidden'); };
+$('#lockBtn').onclick=async()=>{ await API.logout(); showLock(); };
+$('#nav').onclick=e=>{const b=e.target.closest('[data-f]'); if(!b) return; state.filter=b.dataset.f; state.sel.clear(); render(); closeMenu(); };
+$('#search').oninput=e=>{state.q=e.target.value;render();};
+$('#sort').onchange=e=>{state.sort=e.target.value;render();};
+$('#vGrid').onclick=()=>{state.view='grid';render();}; $('#vList').onclick=()=>{state.view='list';render();};
+$('#themeBtn').onclick=()=>{const d=document.documentElement; d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';};
+const openMenu=()=>{$('#side').classList.remove('-translate-x-full');$('#scrim').classList.remove('hidden');};
+const closeMenu=()=>{$('#side').classList.add('-translate-x-full');$('#scrim').classList.add('hidden');};
+$('#menuBtn').onclick=openMenu; $('#scrim').onclick=closeMenu;
+$('#uploadBtn').onclick=$('#drop').onclick=()=>$('#file').click();
+$('#drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#file').click();}};
+$('#file').onchange=e=>{handleFiles([...e.target.files]);e.target.value='';};
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.add('drop-on');}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||!e.relatedTarget)$('#drop').classList.remove('drop-on');}));
+document.addEventListener('drop',e=>{ if(e.dataTransfer.files.length&&!$('#app').classList.contains('hidden')) handleFiles([...e.dataTransfer.files]); });
+$('#urlForm').onsubmit=async e=>{ e.preventDefault(); const u=$('#urlIn').value;
+  try{ toast('Saving from link…'); await API.importUrl(u); state.files=await API.list(); render(); $('#urlIn').value=''; toast('Saved to Libra'); }
+  catch{ toast("Couldn't fetch that link. The site may block downloads."); } };
+$('#grid').onclick=e=>{ const o=e.target.closest('[data-open]'); if(o){ open(visible().findIndex(f=>f.id===o.dataset.open)); } };
+$('#grid').onchange=e=>{ const c=e.target.closest('[data-sel]'); if(!c) return; c.checked?state.sel.add(c.dataset.sel):state.sel.delete(c.dataset.sel); render(); };
+$('#bulkX').onclick=()=>{state.sel.clear();render();};
+$('#bulkDel').onclick=async()=>{ const ids=[...state.sel]; await API.remove(ids); state.sel.clear(); state.files=await API.list(); render(); toast(ids.length+' deleted'); };
+$('#bulkDl').onclick=()=>{ state.files.filter(f=>state.sel.has(f.id)).forEach(f=>{const a=document.createElement('a');a.href=f.url+'?download=1';a.download=f.name;a.click();}); };
+$('#vX').onclick=closeViewer; $('#vPrev').onclick=()=>open(state.open-1); $('#vNext').onclick=()=>open(state.open+1);
+$('#vFav').onclick=async()=>{const f=cur(); await API.favorite(f.id,!f.fav); state.files=await API.list(); const i=state.open; render(); open(i);};
+$('#vRen').onclick=async()=>{const f=cur(); const n=prompt('Rename file',f.name); if(n&&n.trim()){ await API.rename(f.id,n.trim()); state.files=await API.list(); const i=state.open; render(); open(i); toast('Renamed'); }};
+$('#vDel').onclick=async()=>{const f=cur(); if(!confirm('Delete "'+f.name+'" permanently?')) return; await API.remove([f.id]); state.files=await API.list(); closeViewer(); render(); toast('Deleted'); };
+document.addEventListener('keydown',e=>{ if($('#viewer').classList.contains('hidden')) return;
+  if(e.key==='Escape') closeViewer(); if(e.key==='ArrowLeft') open(state.open-1); if(e.key==='ArrowRight') open(state.open+1); });
+API.me().then(ok=>ok&&enterApp()).catch(()=>{});
+</script>
+</body>
+</html>
